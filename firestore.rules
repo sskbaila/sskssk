@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Test connection
+    match /test/connection {
+      allow read, write: if true;
+    }
+
+    // Officers collection
+    match /officers/{officerId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Leave requests collection
+    match /leaves/{leaveId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Station configuration
+    match /station_config/{configId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Audit logs
+    match /audit_logs/{logId} {
+      allow read: if true;
+      allow create: if true;
+    }
+
+    // Catch-all default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

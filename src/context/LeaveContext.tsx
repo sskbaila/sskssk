@@ -11,6 +11,18 @@ import {
 } from '../types/leave';
 import { INITIAL_OFFICERS, INITIAL_STATION_CONFIG, INITIAL_HOLIDAYS } from '../data/initialOfficers';
 import { INITIAL_LEAVES } from '../data/initialLeaves';
+import { db, handleFirestoreError, OperationType, testConnection } from '../firebase';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  deleteDoc, 
+  onSnapshot, 
+  getDocs, 
+  query, 
+  orderBy, 
+  writeBatch 
+} from 'firebase/firestore';
 
 interface InAppNotification {
   id: string;
@@ -32,6 +44,7 @@ interface LeaveContextType {
   notifications: InAppNotification[];
   selectedFiscalYear: number;
   setSelectedFiscalYear: (year: number) => void;
+  isFirebaseConnected: boolean;
 
   // Auth
   login: (username: string, password: string) => { success: boolean; message: string; requiresPasswordChange?: boolean };
@@ -97,6 +110,7 @@ const STORAGE_KEY_NOTIFS = 'ssk_police_notifs_v1';
 export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Requirement 76: Every time the page/applet is loaded, start at login page first (currentUser = null)
   const [currentUser, setCurrentUser] = useState<OfficerUser | null>(null);
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(false);
 
   const [officers, setOfficers] = useState<OfficerUser[]>(() => {
     try {
@@ -162,19 +176,10 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {
           id: 'notif-1',
           title: 'ยินดีต้อนรับสู่ระบบลาออนไลน์ สภ.ศรีสงคราม',
-          message: 'สามารถตรวจสอบวันลาคงเหลือ ยื่นใบลา และดูแผงการลาประจำเดือนได้ทันที',
+          message: 'ระบบเชื่อมต่อฐานข้อมูล Google Cloud Firestore เรียบร้อยแล้ว',
           timestamp: 'วันนี้',
           read: false,
           type: 'info'
-        },
-        {
-          id: 'notif-2',
-          title: 'มีคำขอลาใหม่รอการตรวจสอบ',
-          message: 'สภ.0069/2568: ส.ต.ท. นัฐพงษ์ คุ้มเกรง ขอลาพักผ่อน',
-          timestamp: '1 ต.ค. 2568',
-          read: false,
-          leaveId: 'leave-001',
-          type: 'warning'
         }
       ];
     } catch {
@@ -184,7 +189,100 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [selectedFiscalYear, setSelectedFiscalYear] = useState<number>(2568);
 
-  // Sync to localStorage
+  // Test and initialize Firestore synchronization on mount
+  useEffect(() => {
+    let unsubscribeLeaves: (() => void) | undefined;
+    let unsubscribeOfficers: (() => void) | undefined;
+    let unsubscribeConfig: (() => void) | undefined;
+
+    const setupFirebaseSync = async () => {
+      const isAlive = await testConnection();
+      setIsFirebaseConnected(isAlive);
+
+      try {
+        // Sync Leaves
+        const leavesCol = collection(db, 'leaves');
+        unsubscribeLeaves = onSnapshot(
+          leavesCol,
+          (snapshot) => {
+            if (!snapshot.empty) {
+              const loadedLeaves: LeaveRequest[] = [];
+              snapshot.forEach((docSnap) => {
+                loadedLeaves.push(docSnap.data() as LeaveRequest);
+              });
+              setLeaves(loadedLeaves);
+            } else {
+              // Seed initial leaves if collection is empty
+              INITIAL_LEAVES.forEach((item) => {
+                setDoc(doc(db, 'leaves', item.id), item).catch((err) =>
+                  handleFirestoreError(err, OperationType.WRITE, `leaves/${item.id}`)
+                );
+              });
+            }
+          },
+          (error) => {
+            handleFirestoreError(error, OperationType.LIST, 'leaves');
+          }
+        );
+
+        // Sync Officers
+        const officersCol = collection(db, 'officers');
+        unsubscribeOfficers = onSnapshot(
+          officersCol,
+          (snapshot) => {
+            if (!snapshot.empty) {
+              const loadedOfficers: OfficerUser[] = [];
+              snapshot.forEach((docSnap) => {
+                loadedOfficers.push(docSnap.data() as OfficerUser);
+              });
+              loadedOfficers.sort((a, b) => (a.orderNumber || 0) - (b.orderNumber || 0));
+              setOfficers(loadedOfficers);
+            } else {
+              // Seed initial officers if collection is empty
+              INITIAL_OFFICERS.forEach((item) => {
+                setDoc(doc(db, 'officers', item.id), item).catch((err) =>
+                  handleFirestoreError(err, OperationType.WRITE, `officers/${item.id}`)
+                );
+              });
+            }
+          },
+          (error) => {
+            handleFirestoreError(error, OperationType.LIST, 'officers');
+          }
+        );
+
+        // Sync Station Config
+        const configDocRef = doc(db, 'station_config', 'main');
+        unsubscribeConfig = onSnapshot(
+          configDocRef,
+          (docSnap) => {
+            if (docSnap.exists()) {
+              setStationConfig(docSnap.data() as StationConfig);
+            } else {
+              setDoc(configDocRef, INITIAL_STATION_CONFIG).catch((err) =>
+                handleFirestoreError(err, OperationType.WRITE, 'station_config/main')
+              );
+            }
+          },
+          (error) => {
+            handleFirestoreError(error, OperationType.GET, 'station_config/main');
+          }
+        );
+      } catch (err) {
+        console.warn('Firebase sync initialization error:', err);
+      }
+    };
+
+    setupFirebaseSync();
+
+    return () => {
+      if (unsubscribeLeaves) unsubscribeLeaves();
+      if (unsubscribeOfficers) unsubscribeOfficers();
+      if (unsubscribeConfig) unsubscribeConfig();
+    };
+  }, []);
+
+  // Sync to localStorage as robust offline fallback
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY_OFFICERS, JSON.stringify(officers));
@@ -252,7 +350,16 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       entityId,
       details
     };
-    setAuditLogs(prev => [newLog, ...prev.slice(0, 499)]); // Keep last 500 logs
+    setAuditLogs(prev => [newLog, ...prev.slice(0, 499)]);
+
+    // Write to Firestore audit_logs
+    try {
+      setDoc(doc(db, 'audit_logs', newLog.id), newLog).catch((err) =>
+        handleFirestoreError(err, OperationType.CREATE, `audit_logs/${newLog.id}`)
+      );
+    } catch (err) {
+      console.warn('Audit log write error:', err);
+    }
   }, [currentUser]);
 
   // Session timeout auto-logout (Requirement 36: 30 minutes idle timeout)
@@ -278,7 +385,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [currentUser, addAuditLog]);
 
-  // Login handler (flexible matching: SSK503, ssk503, ศรีสงคราม 503)
+  // Login handler
   const login = useCallback((inputUser: string, inputPass: string) => {
     const cleanInput = inputUser.trim().toLowerCase();
     const targetUser = officers.find(o => 
@@ -303,11 +410,18 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const attempts = (targetUser.failedLoginAttempts || 0) + 1;
       const isLocked = attempts >= 5;
       
-      setOfficers(prev => prev.map(o => o.id === targetUser.id ? {
-        ...o,
+      const updatedUser = {
+        ...targetUser,
         failedLoginAttempts: attempts,
         isLocked
-      } : o));
+      };
+
+      setOfficers(prev => prev.map(o => o.id === targetUser.id ? updatedUser : o));
+
+      // Update in Firestore
+      setDoc(doc(db, 'officers', targetUser.id), updatedUser).catch((err) =>
+        handleFirestoreError(err, OperationType.UPDATE, `officers/${targetUser.id}`)
+      );
 
       if (isLocked) {
         addAuditLog('UPDATE', 'OfficerUser', `ระงับบัญชี ${targetUser.callSign} ชั่วคราวเนื่องจากใส่รหัสผ่านผิด 5 ครั้ง`, targetUser.id);
@@ -321,10 +435,12 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     // Success login
-    setOfficers(prev => prev.map(o => o.id === targetUser.id ? {
-      ...o,
-      failedLoginAttempts: 0
-    } : o));
+    const updatedUser = { ...targetUser, failedLoginAttempts: 0 };
+    setOfficers(prev => prev.map(o => o.id === targetUser.id ? updatedUser : o));
+
+    setDoc(doc(db, 'officers', targetUser.id), updatedUser).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, `officers/${targetUser.id}`)
+    );
 
     setCurrentUser(targetUser);
 
@@ -345,40 +461,66 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [currentUser, addAuditLog]);
 
   const updatePassword = useCallback((userId: string, newPass: string) => {
-    setOfficers(prev => prev.map(o => o.id === userId ? {
-      ...o,
+    const officer = officers.find(o => o.id === userId);
+    if (!officer) return false;
+
+    const updated = {
+      ...officer,
       password: newPass,
       mustChangePassword: false,
       failedLoginAttempts: 0,
       isLocked: false
-    } : o));
+    };
+
+    setOfficers(prev => prev.map(o => o.id === userId ? updated : o));
+    setDoc(doc(db, 'officers', userId), updated).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, `officers/${userId}`)
+    );
+
     addAuditLog('UPDATE', 'OfficerUser', 'เปลี่ยนรหัสผ่านสำเร็จ', userId);
     if (currentUser?.id === userId) {
       setCurrentUser(prev => prev ? { ...prev, password: newPass, mustChangePassword: false } : null);
     }
     return true;
-  }, [currentUser, addAuditLog]);
+  }, [currentUser, officers, addAuditLog]);
 
   const adminResetPassword = useCallback((userId: string, newPass: string) => {
     const officer = officers.find(o => o.id === userId);
-    setOfficers(prev => prev.map(o => o.id === userId ? {
-      ...o,
+    if (!officer) return false;
+
+    const updated = {
+      ...officer,
       password: newPass,
       failedLoginAttempts: 0,
       isLocked: false
-    } : o));
+    };
+
+    setOfficers(prev => prev.map(o => o.id === userId ? updated : o));
+    setDoc(doc(db, 'officers', userId), updated).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, `officers/${userId}`)
+    );
+
     addAuditLog('PASSWORD_RESET', 'OfficerUser', `แอดมินรีเซ็ตรหัสผ่านของ ${officer?.rank} ${officer?.firstName} (${officer?.callSign})`, userId);
     return true;
   }, [officers, addAuditLog]);
 
   const unlockAccount = useCallback((userId: string) => {
-    setOfficers(prev => prev.map(o => o.id === userId ? {
-      ...o,
+    const officer = officers.find(o => o.id === userId);
+    if (!officer) return;
+
+    const updated = {
+      ...officer,
       failedLoginAttempts: 0,
       isLocked: false
-    } : o));
+    };
+
+    setOfficers(prev => prev.map(o => o.id === userId ? updated : o));
+    setDoc(doc(db, 'officers', userId), updated).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, `officers/${userId}`)
+    );
+
     addAuditLog('UPDATE', 'OfficerUser', 'ปลดล็อกบัญชีผู้ใช้งาน', userId);
-  }, [addAuditLog]);
+  }, [officers, addAuditLog]);
 
   // Officer CRUD
   const addOfficer = useCallback((newOffData: Omit<OfficerUser, 'id' | 'orderNumber' | 'failedLoginAttempts' | 'isLocked'>) => {
@@ -391,22 +533,48 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       isLocked: false,
     };
     setOfficers(prev => [...prev, newOfficer]);
+
+    // Write to Firestore
+    setDoc(doc(db, 'officers', newOfficer.id), newOfficer).catch((err) =>
+      handleFirestoreError(err, OperationType.CREATE, `officers/${newOfficer.id}`)
+    );
+
     addAuditLog('CREATE', 'OfficerUser', `เพิ่มบุคลากรใหม่: ${newOfficer.rank} ${newOfficer.firstName} ${newOfficer.lastName} (${newOfficer.callSign})`, newOfficer.id);
     return true;
   }, [officers.length, addAuditLog]);
 
   const updateOfficer = useCallback((id: string, updates: Partial<OfficerUser>) => {
-    setOfficers(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o));
-    addAuditLog('UPDATE', 'OfficerUser', `แก้ไขข้อมูลบุคลากร ID: ${id}`, id);
+    const target = officers.find(o => o.id === id);
+    if (!target) return false;
+
+    const updated = { ...target, ...updates };
+    setOfficers(prev => prev.map(o => o.id === id ? updated : o));
+
+    setDoc(doc(db, 'officers', id), updated).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, `officers/${id}`)
+    );
+
+    const roleChanged = updates.role && updates.role !== target.role;
+    const detail = roleChanged
+      ? `เปลี่ยนบทบาท/สิทธิ์ของ ${target.rank} ${target.firstName} ${target.lastName} (${target.callSign}) จาก "${target.role}" เป็น "${updates.role}"`
+      : `แก้ไขข้อมูลบุคลากร: ${target.rank} ${target.firstName} (${target.callSign})`;
+
+    addAuditLog('UPDATE', 'OfficerUser', detail, id);
     if (currentUser?.id === id) {
       setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
     }
     return true;
-  }, [currentUser, addAuditLog]);
+  }, [currentUser, officers, addAuditLog]);
 
   const deleteOfficer = useCallback((id: string) => {
     const off = officers.find(o => o.id === id);
     setOfficers(prev => prev.filter(o => o.id !== id));
+
+    // Delete in Firestore
+    deleteDoc(doc(db, 'officers', id)).catch((err) =>
+      handleFirestoreError(err, OperationType.DELETE, `officers/${id}`)
+    );
+
     addAuditLog('DELETE', 'OfficerUser', `ลบบุคลากร: ${off?.rank} ${off?.firstName} ${off?.lastName} (${off?.callSign})`, id);
     return true;
   }, [officers, addAuditLog]);
@@ -512,6 +680,16 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setLeaves(prev => [newLeave, ...prev]);
     setStationConfig(prev => ({ ...prev, autoNumberSequence: nextSeq }));
 
+    // Write to Firestore leaves collection
+    setDoc(doc(db, 'leaves', newLeave.id), newLeave).catch((err) =>
+      handleFirestoreError(err, OperationType.CREATE, `leaves/${newLeave.id}`)
+    );
+
+    // Update config in Firestore
+    setDoc(doc(db, 'station_config', 'main'), { ...stationConfig, autoNumberSequence: nextSeq }).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, 'station_config/main')
+    );
+
     // Send notifications to supervisors/admins
     const notif: InAppNotification = {
       id: `notif-${Date.now()}`,
@@ -527,219 +705,268 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     addAuditLog('CREATE', 'LeaveRequest', `ยื่นใบลาเลขที่ ${leaveNumber} ประเภท ${data.leaveType} (${data.durationDays} วัน)`, newLeave.id);
 
     return newLeave;
-  }, [stationConfig.autoNumberSequence, addAuditLog]);
+  }, [stationConfig, addAuditLog]);
 
   // Update Leave Request
   const updateLeaveRequest = useCallback((id: string, updates: Partial<LeaveRequest>) => {
-    setLeaves(prev => prev.map(l => {
-      if (l.id !== id) return l;
-      return {
-        ...l,
-        ...updates,
-        updatedAt: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
-      };
-    }));
+    let target = leaves.find(l => l.id === id);
+    if (!target) return false;
+
+    const updated = {
+      ...target,
+      ...updates,
+      updatedAt: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+    };
+
+    setLeaves(prev => prev.map(l => l.id === id ? updated : l));
+
+    setDoc(doc(db, 'leaves', id), updated).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, `leaves/${id}`)
+    );
+
     addAuditLog('UPDATE', 'LeaveRequest', `แก้ไขคำขอลา ID: ${id}`, id);
     return true;
-  }, [addAuditLog]);
+  }, [leaves, addAuditLog]);
 
   // Cancel Leave Request (Requirement 19 & 25)
   const cancelLeaveRequest = useCallback((id: string, reason?: string) => {
-    setLeaves(prev => prev.map(l => {
-      if (l.id !== id) return l;
-      const updatedTimeline = [
-        ...l.timeline,
-        {
-          step: 'cancelled',
-          title: 'ยกเลิกคำขอลา',
-          actor: currentUser ? `${currentUser.rank} ${currentUser.firstName}` : 'ผู้ใช้',
-          actorRankName: currentUser ? `${currentUser.rank} ${currentUser.firstName} ${currentUser.lastName} (${currentUser.callSign})` : '-',
-          action: reason ? `ยกเลิกคำขอลา: ${reason}` : 'ยกเลิกคำขอลา',
-          timestamp: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }),
-          status: 'cancelled' as const,
-          note: reason
-        }
-      ];
-      return {
-        ...l,
+    const target = leaves.find(l => l.id === id);
+    if (!target) return false;
+
+    const updatedTimeline = [
+      ...target.timeline,
+      {
+        step: 'cancelled',
+        title: 'ยกเลิกคำขอลา',
+        actor: currentUser ? `${currentUser.rank} ${currentUser.firstName}` : 'ผู้ใช้',
+        actorRankName: currentUser ? `${currentUser.rank} ${currentUser.firstName} ${currentUser.lastName} (${currentUser.callSign})` : '-',
+        action: reason ? `ยกเลิกคำขอลา: ${reason}` : 'ยกเลิกคำขอลา',
+        timestamp: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }),
         status: 'cancelled' as const,
-        rejectReason: reason,
-        timeline: updatedTimeline,
-        updatedAt: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
-      };
-    }));
+        note: reason
+      }
+    ];
+
+    const updated = {
+      ...target,
+      status: 'cancelled' as const,
+      rejectReason: reason,
+      timeline: updatedTimeline,
+      updatedAt: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+    };
+
+    setLeaves(prev => prev.map(l => l.id === id ? updated : l));
+
+    setDoc(doc(db, 'leaves', id), updated).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, `leaves/${id}`)
+    );
 
     addAuditLog('CANCEL', 'LeaveRequest', `ยกเลิกคำขอลา ID: ${id} ${reason ? `(${reason})` : ''}`, id);
     return true;
-  }, [currentUser, addAuditLog]);
+  }, [currentUser, leaves, addAuditLog]);
 
-  // Withdraw Leave Request (Requirement 43)
+  // Withdraw Leave Request
   const withdrawLeaveRequest = useCallback((id: string) => {
-    setLeaves(prev => prev.map(l => {
-      if (l.id !== id) return l;
-      const updatedTimeline = [
-        ...l.timeline,
-        {
-          step: 'withdrawn',
-          title: 'ถอนคำขอลา',
-          actor: currentUser ? `${currentUser.rank} ${currentUser.firstName}` : 'ผู้ยื่นลา',
-          actorRankName: currentUser ? `${currentUser.rank} ${currentUser.firstName} ${currentUser.lastName} (${currentUser.callSign})` : '-',
-          action: 'ผู้ยื่นลาทำการถอนคำขอออกจากระบบ',
-          timestamp: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }),
-          status: 'cancelled' as const
-        }
-      ];
-      return {
-        ...l,
-        status: 'withdrawn' as const,
-        timeline: updatedTimeline,
-        updatedAt: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
-      };
-    }));
+    const target = leaves.find(l => l.id === id);
+    if (!target) return false;
+
+    const updatedTimeline = [
+      ...target.timeline,
+      {
+        step: 'withdrawn',
+        title: 'ถอนคำขอลา',
+        actor: currentUser ? `${currentUser.rank} ${currentUser.firstName}` : 'ผู้ยื่นลา',
+        actorRankName: currentUser ? `${currentUser.rank} ${currentUser.firstName} ${currentUser.lastName} (${currentUser.callSign})` : '-',
+        action: 'ผู้ยื่นลาทำการถอนคำขอออกจากระบบ',
+        timestamp: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }),
+        status: 'cancelled' as const
+      }
+    ];
+
+    const updated = {
+      ...target,
+      status: 'withdrawn' as const,
+      timeline: updatedTimeline,
+      updatedAt: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+    };
+
+    setLeaves(prev => prev.map(l => l.id === id ? updated : l));
+
+    setDoc(doc(db, 'leaves', id), updated).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, `leaves/${id}`)
+    );
 
     addAuditLog('WITHDRAW', 'LeaveRequest', `ถอนคำขอลา ID: ${id}`, id);
     return true;
-  }, [currentUser, addAuditLog]);
+  }, [currentUser, leaves, addAuditLog]);
 
-  // Approve Leave Request (Role-based step)
+  // Approve Leave Request
   const approveLeaveRequest = useCallback((id: string, comment = '') => {
+    const target = leaves.find(l => l.id === id);
+    if (!target) return false;
+
     const actorName = currentUser ? `${currentUser.rank} ${currentUser.firstName} ${currentUser.lastName}` : 'ผู้มีอำนาจอนุมัติ';
     const actorRole = currentUser?.role || 'approver';
 
-    setLeaves(prev => prev.map(l => {
-      if (l.id !== id) return l;
+    let nextStatus: LeaveRequest['status'] = 'approved';
+    let stepTitle = 'อนุมัติเรียบร้อย';
 
-      // Determine next status based on who approved
-      let nextStatus: LeaveRequest['status'] = 'approved';
-      let stepTitle = 'อนุมัติเรียบร้อย';
-
-      if (l.status === 'pending_supervisor') {
-        if (actorRole === 'supervisor' || actorRole === 'admin') {
-          nextStatus = 'pending_checker';
-          stepTitle = 'หัวหน้างานผ่านความเห็นชอบ';
-        }
-      } else if (l.status === 'pending_checker') {
-        if (actorRole === 'checker' || actorRole === 'admin') {
-          nextStatus = 'pending_approver';
-          stepTitle = 'ผู้ตรวจสอบตรวจสถิติถูกต้อง';
-        }
-      } else {
-        nextStatus = 'approved';
-        stepTitle = 'ผู้บังคับบัญชาลงนามอนุมัติ';
+    if (target.status === 'pending_supervisor') {
+      if (actorRole === 'supervisor' || actorRole === 'admin') {
+        nextStatus = 'pending_checker';
+        stepTitle = 'หัวหน้างานผ่านความเห็นชอบ';
       }
-
-      // If superintendent or approver approves directly, complete approval
-      if (actorRole === 'superintendent' || actorRole === 'approver') {
-        nextStatus = 'approved';
-        stepTitle = 'ผู้กำกับการอนุมัติ';
+    } else if (target.status === 'pending_checker') {
+      if (actorRole === 'checker' || actorRole === 'admin') {
+        nextStatus = 'pending_approver';
+        stepTitle = 'ผู้ตรวจสอบตรวจสถิติถูกต้อง';
       }
+    } else {
+      nextStatus = 'approved';
+      stepTitle = 'ผู้บังคับบัญชาลงนามอนุมัติ';
+    }
 
-      const updatedTimeline = [
-        ...l.timeline,
-        {
-          step: nextStatus === 'approved' ? 'approved' : nextStatus,
-          title: stepTitle,
-          actor: actorName,
-          actorRankName: `${actorName} (${currentUser?.callSign || ''})`,
-          action: comment ? `อนุมัติ / เห็นควรอนุญาต: ${comment}` : 'อนุมัติคำขอลา',
-          timestamp: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }),
-          status: 'completed' as const,
-          note: comment
-        }
-      ];
+    if (actorRole === 'superintendent' || actorRole === 'approver') {
+      nextStatus = 'approved';
+      stepTitle = 'ผู้กำกับการอนุมัติ';
+    }
 
-      return {
-        ...l,
-        status: nextStatus,
-        approverComment: comment || l.approverComment,
-        approverSignedBy: actorName,
-        approverDate: new Date().toISOString().split('T')[0],
-        timeline: updatedTimeline,
-        updatedAt: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
-      };
-    }));
+    const updatedTimeline = [
+      ...target.timeline,
+      {
+        step: nextStatus === 'approved' ? 'approved' : nextStatus,
+        title: stepTitle,
+        actor: actorName,
+        actorRankName: `${actorName} (${currentUser?.callSign || ''})`,
+        action: comment ? `อนุมัติ / เห็นควรอนุญาต: ${comment}` : 'อนุมัติคำขอลา',
+        timestamp: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }),
+        status: 'completed' as const,
+        note: comment
+      }
+    ];
+
+    const updated = {
+      ...target,
+      status: nextStatus,
+      approverComment: comment || target.approverComment,
+      approverSignedBy: actorName,
+      approverDate: new Date().toISOString().split('T')[0],
+      timeline: updatedTimeline,
+      updatedAt: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+    };
+
+    setLeaves(prev => prev.map(l => l.id === id ? updated : l));
+
+    setDoc(doc(db, 'leaves', id), updated).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, `leaves/${id}`)
+    );
 
     addAuditLog('APPROVE', 'LeaveRequest', `อนุมัติคำขอลา ID: ${id} โดย ${actorName}`, id);
     return true;
-  }, [currentUser, addAuditLog]);
+  }, [currentUser, leaves, addAuditLog]);
 
-  // Reject Leave Request (Requirement 49: Mandatory reject reason)
+  // Reject Leave Request
   const rejectLeaveRequest = useCallback((id: string, reason: string) => {
     if (!reason.trim()) return false;
+    const target = leaves.find(l => l.id === id);
+    if (!target) return false;
+
     const actorName = currentUser ? `${currentUser.rank} ${currentUser.firstName} ${currentUser.lastName}` : 'ผู้บังคับบัญชา';
 
-    setLeaves(prev => prev.map(l => {
-      if (l.id !== id) return l;
-
-      const updatedTimeline = [
-        ...l.timeline,
-        {
-          step: 'rejected',
-          title: 'ไม่อนุมัติคำขอลา',
-          actor: actorName,
-          actorRankName: `${actorName} (${currentUser?.callSign || ''})`,
-          action: `ไม่อนุมัติ: ${reason}`,
-          timestamp: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }),
-          status: 'rejected' as const,
-          note: reason
-        }
-      ];
-
-      return {
-        ...l,
+    const updatedTimeline = [
+      ...target.timeline,
+      {
+        step: 'rejected',
+        title: 'ไม่อนุมัติคำขอลา',
+        actor: actorName,
+        actorRankName: `${actorName} (${currentUser?.callSign || ''})`,
+        action: `ไม่อนุมัติ: ${reason}`,
+        timestamp: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }),
         status: 'rejected' as const,
-        rejectReason: reason,
-        timeline: updatedTimeline,
-        updatedAt: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
-      };
-    }));
+        note: reason
+      }
+    ];
+
+    const updated = {
+      ...target,
+      status: 'rejected' as const,
+      rejectReason: reason,
+      timeline: updatedTimeline,
+      updatedAt: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+    };
+
+    setLeaves(prev => prev.map(l => l.id === id ? updated : l));
+
+    setDoc(doc(db, 'leaves', id), updated).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, `leaves/${id}`)
+    );
 
     addAuditLog('REJECT', 'LeaveRequest', `ไม่อนุมัติคำขอลา ID: ${id} เหตุผล: ${reason}`, id);
     return true;
-  }, [currentUser, addAuditLog]);
+  }, [currentUser, leaves, addAuditLog]);
 
   // Return for revision
   const returnForRevision = useCallback((id: string, note: string) => {
-    setLeaves(prev => prev.map(l => {
-      if (l.id !== id) return l;
-      return {
-        ...l,
-        status: 'pending_supervisor',
-        rejectReason: `ส่งกลับแก้ไข: ${note}`,
-        timeline: [
-          ...l.timeline,
-          {
-            step: 'returned',
-            title: 'ส่งกลับแก้ไขคำขอ',
-            actor: currentUser ? `${currentUser.rank} ${currentUser.firstName}` : 'ผู้ตรวจสอบ',
-            actorRankName: currentUser ? `${currentUser.rank} ${currentUser.firstName} (${currentUser.callSign})` : '-',
-            action: `ส่งกลับให้ผู้ลาแก้ไขข้อมูล: ${note}`,
-            timestamp: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }),
-            status: 'current' as const,
-            note
-          }
-        ]
-      };
-    }));
+    const target = leaves.find(l => l.id === id);
+    if (!target) return false;
+
+    const updated = {
+      ...target,
+      status: 'pending_supervisor' as const,
+      rejectReason: `ส่งกลับแก้ไข: ${note}`,
+      timeline: [
+        ...target.timeline,
+        {
+          step: 'returned',
+          title: 'ส่งกลับแก้ไขคำขอ',
+          actor: currentUser ? `${currentUser.rank} ${currentUser.firstName}` : 'ผู้ตรวจสอบ',
+          actorRankName: currentUser ? `${currentUser.rank} ${currentUser.firstName} (${currentUser.callSign})` : '-',
+          action: `ส่งกลับให้ผู้ลาแก้ไขข้อมูล: ${note}`,
+          timestamp: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }),
+          status: 'current' as const,
+          note
+        }
+      ]
+    };
+
+    setLeaves(prev => prev.map(l => l.id === id ? updated : l));
+
+    setDoc(doc(db, 'leaves', id), updated).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, `leaves/${id}`)
+    );
+
     addAuditLog('UPDATE', 'LeaveRequest', `ส่งกลับแก้ไขคำขอลา ID: ${id}`, id);
     return true;
-  }, [currentUser, addAuditLog]);
+  }, [currentUser, leaves, addAuditLog]);
 
   // Station config updates
   const updateStationConfig = useCallback((updates: Partial<StationConfig>) => {
-    setStationConfig(prev => ({ ...prev, ...updates }));
-    addAuditLog('CONFIG_UPDATE', 'StationConfig', 'อัปเดตการตั้งค่าสถานีตำรวจ/ปีงบประมาณ');
-  }, [addAuditLog]);
+    const updated = { ...stationConfig, ...updates };
+    setStationConfig(updated);
 
-  // Update duty manpower numbers (Requirement 20 & 24)
+    // Save to Firestore
+    setDoc(doc(db, 'station_config', 'main'), updated).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, 'station_config/main')
+    );
+
+    addAuditLog('CONFIG_UPDATE', 'StationConfig', 'อัปเดตการตั้งค่าสถานีตำรวจ/ปีงบประมาณ');
+  }, [stationConfig, addAuditLog]);
+
+  // Update duty manpower numbers
   const updateDutyManpower = useCallback((total: number, leaving: number) => {
-    setStationConfig(prev => ({
-      ...prev,
+    const updated = {
+      ...stationConfig,
       dutyOfficersTotal: total,
       dutyOfficersLeaving: leaving
-    }));
+    };
+    setStationConfig(updated);
+
+    setDoc(doc(db, 'station_config', 'main'), updated).catch((err) =>
+      handleFirestoreError(err, OperationType.UPDATE, 'station_config/main')
+    );
+
     addAuditLog('CONFIG_UPDATE', 'StationConfig', `อัปเดตกำลังพล: ปฏิบัติหน้าที่ ${total} นาย, ลา ${leaving} นาย, คงเหลือ ${Math.max(0, total - leaving)} นาย`);
-  }, [addAuditLog]);
+  }, [stationConfig, addAuditLog]);
 
   // Holidays
   const addHoliday = useCallback((holiday: PublicHoliday) => {
@@ -761,7 +988,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   }, []);
 
-  // Backup & Restore (Requirement 61 & 62)
+  // Backup & Restore
   const exportBackupJSON = useCallback(() => {
     const backupData = {
       version: '1.0',
@@ -779,9 +1006,28 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const importBackupJSON = useCallback((jsonString: string) => {
     try {
       const data = JSON.parse(jsonString);
-      if (data.officers && Array.isArray(data.officers)) setOfficers(data.officers);
-      if (data.leaves && Array.isArray(data.leaves)) setLeaves(data.leaves);
-      if (data.stationConfig) setStationConfig(data.stationConfig);
+      if (data.officers && Array.isArray(data.officers)) {
+        setOfficers(data.officers);
+        data.officers.forEach((o: OfficerUser) => {
+          setDoc(doc(db, 'officers', o.id), o).catch((err) =>
+            handleFirestoreError(err, OperationType.WRITE, `officers/${o.id}`)
+          );
+        });
+      }
+      if (data.leaves && Array.isArray(data.leaves)) {
+        setLeaves(data.leaves);
+        data.leaves.forEach((l: LeaveRequest) => {
+          setDoc(doc(db, 'leaves', l.id), l).catch((err) =>
+            handleFirestoreError(err, OperationType.WRITE, `leaves/${l.id}`)
+          );
+        });
+      }
+      if (data.stationConfig) {
+        setStationConfig(data.stationConfig);
+        setDoc(doc(db, 'station_config', 'main'), data.stationConfig).catch((err) =>
+          handleFirestoreError(err, OperationType.WRITE, 'station_config/main')
+        );
+      }
       if (data.holidays && Array.isArray(data.holidays)) setHolidays(data.holidays);
       if (data.auditLogs && Array.isArray(data.auditLogs)) setAuditLogs(data.auditLogs);
       addAuditLog('BACKUP_RESTORE', 'System', 'กู้คืนฐานข้อมูลจากไฟล์สำรองสำเร็จ (Restore Backup)');
@@ -798,6 +1044,12 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setStationConfig(INITIAL_STATION_CONFIG);
     setHolidays(INITIAL_HOLIDAYS);
     setNotifications([]);
+
+    // Reset in Firestore
+    INITIAL_OFFICERS.forEach(o => setDoc(doc(db, 'officers', o.id), o));
+    INITIAL_LEAVES.forEach(l => setDoc(doc(db, 'leaves', l.id), l));
+    setDoc(doc(db, 'station_config', 'main'), INITIAL_STATION_CONFIG);
+
     addAuditLog('BACKUP_RESTORE', 'System', 'รีเซ็ตข้อมูลระบบกลับสู่ค่าเริ่มต้นจากโรงงาน');
   }, [addAuditLog]);
 
@@ -811,6 +1063,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     notifications,
     selectedFiscalYear,
     setSelectedFiscalYear,
+    isFirebaseConnected,
     login,
     logout,
     updatePassword,
@@ -846,6 +1099,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     holidays,
     notifications,
     selectedFiscalYear,
+    isFirebaseConnected,
     login,
     logout,
     updatePassword,

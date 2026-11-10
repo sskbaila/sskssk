@@ -1,0 +1,111 @@
+{
+  "entities": {
+    "Officer": {
+      "title": "Officer",
+      "description": "Police officer profile at Si Songkhram Police Station",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderNumber": { "type": "number" },
+        "callSign": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "rank": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "role": { "type": "string" },
+        "division": { "type": "string" },
+        "subDivision": { "type": "string" },
+        "positionTitle": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "accumulatedLeaveDays": { "type": "number" },
+        "currentYearLeaveQuota": { "type": "number" },
+        "failedLoginAttempts": { "type": "number" },
+        "isLocked": { "type": "boolean" }
+      },
+      "required": ["id", "callSign", "username", "rank", "firstName", "lastName", "role", "division"]
+    },
+    "LeaveRequest": {
+      "title": "LeaveRequest",
+      "description": "Police leave application document",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "leaveNumber": { "type": "string" },
+        "fiscalYear": { "type": "number" },
+        "userId": { "type": "string" },
+        "userCallSign": { "type": "string" },
+        "userRank": { "type": "string" },
+        "userName": { "type": "string" },
+        "userSurname": { "type": "string" },
+        "positionTitle": { "type": "string" },
+        "division": { "type": "string" },
+        "subDivision": { "type": "string" },
+        "dutyName": { "type": "string" },
+        "leaveType": { "type": "string" },
+        "reason": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "durationDays": { "type": "number" },
+        "periodType": { "type": "string" },
+        "contactAddress": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "dutyTotalOfficers": { "type": "number" },
+        "dutyLeavingOfficers": { "type": "number" },
+        "dutyRemainingOfficers": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "leaveNumber", "userId", "leaveType", "startDate", "endDate", "durationDays", "status"]
+    },
+    "StationConfig": {
+      "title": "StationConfig",
+      "description": "Police station global configuration",
+      "type": "object",
+      "properties": {
+        "stationName": { "type": "string" },
+        "phone": { "type": "string" },
+        "currentFiscalYear": { "type": "number" },
+        "superintendentRankName": { "type": "string" },
+        "dutyOfficersTotal": { "type": "number" },
+        "dutyOfficersLeaving": { "type": "number" }
+      },
+      "required": ["stationName", "phone", "currentFiscalYear"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "System action tracking log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "actorId": { "type": "string" },
+        "actorName": { "type": "string" },
+        "action": { "type": "string" },
+        "entity": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["id", "timestamp", "actorName", "action", "details"]
+    }
+  },
+  "firestore": {
+    "/officers/{officerId}": {
+      "schema": { "$ref": "#/entities/Officer" },
+      "description": "Police officers roster and credentials"
+    },
+    "/leaves/{leaveId}": {
+      "schema": { "$ref": "#/entities/LeaveRequest" },
+      "description": "Leave requests submitted by officers"
+    },
+    "/station_config/{configId}": {
+      "schema": { "$ref": "#/entities/StationConfig" },
+      "description": "Station operational configuration"
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Audit trail logs"
+    }
+  }
+}

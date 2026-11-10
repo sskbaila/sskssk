@@ -362,6 +362,12 @@ function MainApp() {
             </button>
           </div>
         </div>
+
+        {/* Sidebar Bottom Developer Credit */}
+        <div className="px-3.5 py-2.5 border-t border-rose-800/30 text-[10px] text-rose-300/80 text-center leading-relaxed">
+          พัฒนาระบบโดย นางสาวพิมลวรรณ  สุพะสอน<br />
+          <span className="text-[9.5px] text-rose-300/70">นักวิชาการสาธารณสุข โรงพยาบาลโพนนาแก้ว</span>
+        </div>
       </aside>
 
       {/* Main Content Area */}
@@ -466,6 +472,13 @@ function MainApp() {
             <LeaveReports />
           )}
         </main>
+
+        {/* Elegant Bottom Footer Credit */}
+        <footer className="w-full py-3 px-6 text-center text-xs text-stone-500 border-t border-stone-200/80 bg-white/70 backdrop-blur-xs no-print shrink-0">
+          <p className="font-medium tracking-wide">
+            พัฒนาระบบโดย <span className="font-bold text-stone-700">นางสาวพิมลวรรณ  สุพะสอน</span> นักวิชาการสาธารณสุข โรงพยาบาลโพนนาแก้ว
+          </p>
+        </footer>
       </div>
 
       {/* Modals & Drawers */}

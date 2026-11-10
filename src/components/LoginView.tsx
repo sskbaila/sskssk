@@ -135,6 +135,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ onSuccess }) => {
         </form>
       </div>
 
+      {/* Developer credit footer */}
+      <footer className="mt-8 text-center text-xs text-rose-200/90 font-medium tracking-wide">
+        พัฒนาระบบโดย นางสาวพิมลวรรณ  สุพะสอน นักวิชาการสาธารณสุข โรงพยาบาลโพนนาแก้ว
+      </footer>
+
       {/* Requirement 30: บังคับเปลี่ยนรหัสผ่านครั้งแรก เข้าระบบครั้งแรกต้องเปลี่ยนรหัสผ่านหรือไม่เปลี่ยนก็ได้ */}
       {firstTimeModalUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs">

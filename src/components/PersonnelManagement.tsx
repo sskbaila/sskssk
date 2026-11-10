@@ -3,8 +3,67 @@ import { useLeave } from '../context/LeaveContext';
 import { OfficerUser, UserRole, DivisionType, SUB_DIVISIONS, DIVISION_NAMES } from '../types/leave';
 import { 
   Users, UserPlus, Trash2, Key, Edit2, Shield, Eye, EyeOff, 
-  Search, Lock, Unlock, Check, AlertCircle, Phone, MapPin 
+  Search, Lock, Unlock, Check, AlertCircle, Phone, MapPin, 
+  CheckCircle2, Info, Sparkles, X, UserCheck
 } from 'lucide-react';
+
+export const ROLE_INFO: Record<UserRole, {
+  label: string;
+  shortLabel: string;
+  badgeClass: string;
+  selectClass: string;
+  description: string;
+  permissions: string[];
+}> = {
+  personnel: {
+    label: '👮 บุคลากร (Personnel)',
+    shortLabel: '👮 บุคลากร',
+    badgeClass: 'bg-stone-100 text-stone-800 border-stone-300',
+    selectClass: 'bg-stone-50 text-stone-800 border-stone-300 hover:bg-stone-100',
+    description: 'ข้าราชการตำรวจทั่วไป สิทธิ์ยื่นใบลาออนไลน์ ตรวจสอบประวัติการลาของตนเอง และดูสถิติวันลาคงเหลือ',
+    permissions: ['ยื่นใบลาทุกประเภท (พักผ่อน/กิจ/ป่วย/คลอด/อุปสมบท)', 'ดูประวัติและสถานะการลาของตนเอง', 'ตรวจสอบวันลาสะสมและโควตาประจำปี', 'ดาวน์โหลดและพิมพ์ใบลา A4 ตนเอง']
+  },
+  supervisor: {
+    label: '👮 หัวหน้างาน (Supervisor)',
+    shortLabel: '👮 หัวหน้างาน',
+    badgeClass: 'bg-blue-100 text-blue-900 border-blue-300',
+    selectClass: 'bg-blue-50 text-blue-900 border-blue-300 hover:bg-blue-100',
+    description: 'สารวัตร / รอง ผกก. สิทธิ์ตรวจสอบและให้ความเห็นชอบคำขอลาของข้าราชการตำรวจในสายงานตนเอง',
+    permissions: ['ตรวจสอบคำขอลาของกำลังพลในสายงาน', 'บันทึกความเห็นชอบ/เสนอผู้บังคับบัญชา', 'ดูแผงการลาประจำเดือนของสายงาน']
+  },
+  checker: {
+    label: '📋 ผู้ตรวจสอบ (Checker)',
+    shortLabel: '📋 ผู้ตรวจสอบ',
+    badgeClass: 'bg-teal-100 text-teal-900 border-teal-300',
+    selectClass: 'bg-teal-50 text-teal-900 border-teal-300 hover:bg-teal-100',
+    description: 'ธุรการกำลังพล / ผู้ตรวจสอบ สิทธิ์ตรวจสอบสถิติวันลา วันหยุดราชการ และความถูกต้องของเอกสารก่อนเสนอผู้มีอำนาจอนุมัติ',
+    permissions: ['ตรวจสอบสถิติวันลาสะสมและวันลาครั้งนี้', 'ตรวจนับวันทำการและตัดวันหยุดราชการ', 'ส่งต่อคำขอลาเสนอผู้อนุมัติ']
+  },
+  approver: {
+    label: '✍️ ผู้อนุมัติ (Approver)',
+    shortLabel: '✍️ ผู้อนุมัติ',
+    badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+    selectClass: 'bg-emerald-50 text-emerald-900 border-emerald-300 hover:bg-emerald-100',
+    description: 'ผู้มีอำนาจลงนามอนุมัติคำขอลา (พิจารณาอนุมัติ ไม่อนุมัติ หรือส่งกลับแก้ไข)',
+    permissions: ['อนุมัติคำขอลาออนไลน์แบบเรียลไทม์', 'ไม่อนุมัติคำขอลาพร้อมระบุเหตุผล', 'ส่งกลับคำขอลาเพื่อให้แก้ไขข้อมูล', 'พิมพ์เอกสารใบลาพร้อมความเห็น']
+  },
+  admin: {
+    label: '⚙️ Admin (ผู้ดูแลระบบ)',
+    shortLabel: '⚙️ Admin',
+    badgeClass: 'bg-purple-100 text-purple-900 border-purple-300',
+    selectClass: 'bg-purple-50 text-purple-900 border-purple-300 hover:bg-purple-100',
+    description: 'ผู้ดูแลระบบ สภ.ศรีสงคราม จัดการข้อมูลบุคลากรทั้งหมด กำหนดและแก้ไขบทบาท/สิทธิ์ ดูรหัสผ่าน และตั้งค่าระบบ',
+    permissions: ['แก้ไขบทบาทและสิทธิ์บุคลากรทุกนาย', 'เพิ่ม / ลบ / แก้ไขข้อมูลกำลังพล', 'ดูชื่อผู้ใช้ (Username) และรหัสผ่าน', 'รีเซ็ตรหัสผ่านและปลดล็อกบัญชี', 'จัดการตั้งค่าระบบและหน่วยงาน']
+  },
+  superintendent: {
+    label: '⭐ ผู้กำกับ (Superintendent)',
+    shortLabel: '⭐ ผู้กำกับ',
+    badgeClass: 'bg-amber-100 text-amber-900 border-amber-400',
+    selectClass: 'bg-amber-50 text-amber-900 border-amber-400 hover:bg-amber-100',
+    description: 'ผู้กำกับการ สภ.ศรีสงคราม ผู้บังคับบัญชาสูงสุด อนุมัติการลา ดูภาพรวมสถานี และพิมพ์รายงานสรุปเสนอ ผบก.',
+    permissions: ['อนุมัติคำขอลาของข้าราชการตำรวจทุกนาย', 'ดูรายงานสรุปกำลังปฏิบัติหน้าที่และกำลังลา', 'พิมพ์ทะเบียนคุมการลาและรายงานเสนอ ผบก.', 'ตั้งค่าข้อมูลสถานีและผู้บังคับการ']
+  }
+};
 
 export const PersonnelManagement: React.FC = () => {
   const { 
@@ -19,8 +78,12 @@ export const PersonnelManagement: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDivision, setSelectedDivision] = useState<string>('all');
+  const [selectedRole, setSelectedRole] = useState<string>('all');
+  
   const [showAddModal, setShowAddModal] = useState(false);
   const [editOfficer, setEditOfficer] = useState<OfficerUser | null>(null);
+  const [editFormData, setEditFormData] = useState<OfficerUser | null>(null);
+
   const [resetPassOfficer, setResetPassOfficer] = useState<OfficerUser | null>(null);
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
@@ -52,6 +115,7 @@ export const PersonnelManagement: React.FC = () => {
   const filteredOfficers = useMemo(() => {
     return officers.filter(off => {
       if (selectedDivision !== 'all' && off.division !== selectedDivision) return false;
+      if (selectedRole !== 'all' && off.role !== selectedRole) return false;
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
         const matchName = `${off.rank} ${off.firstName} ${off.lastName}`.toLowerCase().includes(term);
@@ -63,7 +127,7 @@ export const PersonnelManagement: React.FC = () => {
       }
       return true;
     });
-  }, [officers, selectedDivision, searchTerm]);
+  }, [officers, selectedDivision, selectedRole, searchTerm]);
 
   // Requirement 6: auto-generate username and password from callsign
   const handleCallSignChange = (val: string) => {
@@ -90,7 +154,10 @@ export const PersonnelManagement: React.FC = () => {
       password: newOfficerForm.password || newOfficerForm.callSign
     });
 
-    setFeedback({ text: `เพิ่มบุคลากร ${newOfficerForm.rank} ${newOfficerForm.firstName} เรียบร้อยแล้ว`, type: 'success' });
+    setFeedback({ 
+      text: `เพิ่มบุคลากร ${newOfficerForm.rank} ${newOfficerForm.firstName} เรียบร้อยแล้ว (บทบาท: ${ROLE_INFO[newOfficerForm.role].shortLabel})`, 
+      type: 'success' 
+    });
     setShowAddModal(false);
     // Reset form
     setNewOfficerForm({
@@ -109,6 +176,41 @@ export const PersonnelManagement: React.FC = () => {
       accumulatedLeaveDays: 10,
       currentYearLeaveQuota: 10
     });
+  };
+
+  // Quick Role Change from Table
+  const handleQuickRoleChange = (officer: OfficerUser, newRole: UserRole) => {
+    if (officer.role === newRole) return;
+    updateOfficer(officer.id, { role: newRole });
+    setFeedback({
+      text: `อัปเดตบทบาท/สิทธิ์ของ "${officer.rank} ${officer.firstName} ${officer.lastName} (${officer.callSign})" เป็น "${ROLE_INFO[newRole].shortLabel}" เรียบร้อยแล้ว`,
+      type: 'success'
+    });
+  };
+
+  // Open Edit Modal
+  const handleOpenEditModal = (officer: OfficerUser) => {
+    setEditOfficer(officer);
+    setEditFormData({ ...officer });
+  };
+
+  // Save changes from Edit Modal
+  const handleSaveEditOfficer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editFormData || !editOfficer) return;
+
+    if (!editFormData.callSign || !editFormData.firstName || !editFormData.lastName) {
+      setFeedback({ text: 'กรุณากรอกข้อมูลสำคัญให้ครบถ้วน', type: 'error' });
+      return;
+    }
+
+    updateOfficer(editOfficer.id, editFormData);
+    setFeedback({
+      text: `บันทึกการแก้ไขบทบาท/สิทธิ์และข้อมูลของ "${editFormData.rank} ${editFormData.firstName} ${editFormData.lastName}" เรียบร้อยแล้ว`,
+      type: 'success'
+    });
+    setEditOfficer(null);
+    setEditFormData(null);
   };
 
   const handleDelete = (id: string, name: string) => {
@@ -133,7 +235,7 @@ export const PersonnelManagement: React.FC = () => {
         <Shield className="w-12 h-12 text-rose-800 mx-auto mb-3 opacity-60" />
         <h2 className="text-lg font-bold text-stone-800">จำกัดสิทธิ์การเข้าถึงข้อมูลบุคลากร</h2>
         <p className="text-sm text-stone-500 mt-1">
-          ตามระเบียบรักษาความปลอดภัย สภ.ศรีสงคราม (ข้อ 76) หน้าข้อมูลและบัญชีบุคลากรเปิดให้เฉพาะ Admin หรือ ผู้บังคับบัญชา เข้าถึงได้เท่านั้น
+          ตามระเบียบรักษาความปลอดภัย สภ.ศรีสงคราม หน้าข้อมูลและบัญชีบุคลากรเปิดให้เฉพาะ Admin หรือ ผู้บังคับบัญชา เข้าถึงได้เท่านั้น
         </p>
       </div>
     );
@@ -149,13 +251,13 @@ export const PersonnelManagement: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">ระบบบริหารจัดการบุคลากร (Personnel Management)</h1>
+              <h1 className="text-xl font-bold">ระบบบริหารจัดการบุคลากรและกำหนดสิทธิ์</h1>
               <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white font-mono font-bold text-xs">
                 {officers.length} นาย
               </span>
             </div>
             <p className="text-xs text-rose-200 mt-1">
-              เพิ่ม-ลบบุคลากร กำหนดสายงาน สิทธิ์ 6 ระดับ และดูแลรหัสผ่านข้าราชการตำรวจ สภ.ศรีสงคราม
+              แก้ไขบทบาท/สิทธิ์ (6 ระดับ) เพิ่ม-ลบข้าราชการตำรวจ กำหนดสายงาน และดูแลรหัสผ่าน สภ.ศรีสงคราม
             </p>
           </div>
         </div>
@@ -187,43 +289,90 @@ export const PersonnelManagement: React.FC = () => {
       </div>
 
       {feedback && (
-        <div className={`p-4 rounded-xl text-sm font-bold flex items-center justify-between gap-2 ${
+        <div className={`p-4 rounded-xl text-sm font-bold flex items-center justify-between gap-2 shadow-xs transition ${
           feedback.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'
         }`}>
           <div className="flex items-center gap-2">
-            <Check className="w-4 h-4" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{feedback.text}</span>
           </div>
-          <button onClick={() => setFeedback(null)} className="text-stone-400 hover:text-stone-600">×</button>
+          <button onClick={() => setFeedback(null)} className="text-stone-400 hover:text-stone-600 text-lg leading-none">×</button>
         </div>
       )}
 
+      {/* Role Summary Badges */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        {(Object.keys(ROLE_INFO) as UserRole[]).map((rKey) => {
+          const count = officers.filter(o => o.role === rKey).length;
+          const isSelected = selectedRole === rKey;
+          return (
+            <button
+              key={rKey}
+              onClick={() => setSelectedRole(selectedRole === rKey ? 'all' : rKey)}
+              className={`p-2.5 rounded-xl border text-left transition ${
+                isSelected 
+                  ? 'bg-rose-900 text-white border-rose-950 shadow-md ring-2 ring-rose-800' 
+                  : 'bg-white text-stone-800 border-stone-200 hover:border-rose-300 hover:bg-stone-50'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold truncate">{ROLE_INFO[rKey].shortLabel}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold ${
+                  isSelected ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-700'
+                }`}>
+                  {count}
+                </span>
+              </div>
+              <p className={`text-[10px] mt-1 line-clamp-1 ${isSelected ? 'text-rose-200' : 'text-stone-500'}`}>
+                {ROLE_INFO[rKey].description}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Search and Filters */}
       <div className="bg-white p-4 rounded-xl shadow-xs border border-stone-200 flex flex-wrap items-center justify-between gap-3 text-sm">
-        <div className="relative flex-1 min-w-[260px]">
+        <div className="relative flex-1 min-w-[240px]">
           <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="ค้นหาชื่อ, ยศ, นามเรียกขาน, username, ตำแหน่ง หรือสายงาน..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm rounded-xl border border-stone-200 focus:outline-hidden focus:ring-2 focus:ring-rose-800"
+            className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm rounded-xl border border-stone-200 focus:outline-hidden focus:ring-2 focus:ring-rose-800 font-medium"
           />
         </div>
 
-        {/* Division Filter */}
-        <select
-          value={selectedDivision}
-          onChange={e => setSelectedDivision(e.target.value)}
-          className="px-3.5 py-2 text-xs font-semibold rounded-xl border border-stone-200 bg-stone-50 focus:outline-hidden focus:ring-2 focus:ring-rose-800"
-        >
-          <option value="all">ทุกสายงาน ({officers.length})</option>
-          {Object.entries(DIVISION_NAMES).map(([key, name]) => (
-            <option key={key} value={key}>
-              {name} ({officers.filter(o => o.division === key).length})
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Role Filter */}
+          <select
+            value={selectedRole}
+            onChange={e => setSelectedRole(e.target.value)}
+            className="px-3.5 py-2 text-xs font-semibold rounded-xl border border-stone-200 bg-stone-50 focus:outline-hidden focus:ring-2 focus:ring-rose-800"
+          >
+            <option value="all">ทุกบทบาท/สิทธิ์ ({officers.length})</option>
+            {(Object.keys(ROLE_INFO) as UserRole[]).map(rKey => (
+              <option key={rKey} value={rKey}>
+                {ROLE_INFO[rKey].shortLabel} ({officers.filter(o => o.role === rKey).length})
+              </option>
+            ))}
+          </select>
+
+          {/* Division Filter */}
+          <select
+            value={selectedDivision}
+            onChange={e => setSelectedDivision(e.target.value)}
+            className="px-3.5 py-2 text-xs font-semibold rounded-xl border border-stone-200 bg-stone-50 focus:outline-hidden focus:ring-2 focus:ring-rose-800"
+          >
+            <option value="all">ทุกสายงาน ({officers.length})</option>
+            {Object.entries(DIVISION_NAMES).map(([key, name]) => (
+              <option key={key} value={key}>
+                {name} ({officers.filter(o => o.division === key).length})
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Officers Table */}
@@ -236,7 +385,7 @@ export const PersonnelManagement: React.FC = () => {
                 <th className="py-3.5 px-3">นามเรียกขาน</th>
                 <th className="py-3.5 px-4">ยศ ชื่อ-นามสกุล</th>
                 <th className="py-3.5 px-4">สายงาน & สายงานย่อย</th>
-                <th className="py-3.5 px-3">บทบาท/สิทธิ์</th>
+                <th className="py-3.5 px-3">บทบาท/สิทธิ์ (คลิกแก้ไขได้ทันที)</th>
                 {showPasswords && (
                   <>
                     <th className="py-3.5 px-3 font-mono bg-amber-50/50">Username</th>
@@ -252,7 +401,7 @@ export const PersonnelManagement: React.FC = () => {
               {filteredOfficers.length === 0 ? (
                 <tr>
                   <td colSpan={showPasswords ? 9 : 7} className="py-12 text-center text-stone-400 font-medium">
-                    ไม่พบข้อมูลบุคลากรที่ค้นหา
+                    ไม่พบข้อมูลบุคลากรตามเงื่อนไขที่ค้นหา
                   </td>
                 </tr>
               ) : (
@@ -281,22 +430,34 @@ export const PersonnelManagement: React.FC = () => {
                           {officer.subDivision}
                         </div>
                       </td>
+
+                      {/* Requirement: Edit Role / Permissions directly */}
                       <td className="py-3 px-3">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                          officer.role === 'superintendent' ? 'bg-amber-100 text-amber-900 border border-amber-300' :
-                          officer.role === 'admin' ? 'bg-purple-100 text-purple-900 border border-purple-300' :
-                          officer.role === 'approver' ? 'bg-emerald-100 text-emerald-900' :
-                          officer.role === 'supervisor' ? 'bg-blue-100 text-blue-900' :
-                          officer.role === 'checker' ? 'bg-teal-100 text-teal-900' :
-                          'bg-stone-100 text-stone-700'
-                        }`}>
-                          {officer.role === 'superintendent' ? '⭐ ผู้กำกับ' :
-                           officer.role === 'admin' ? '⚙️ Admin' :
-                           officer.role === 'approver' ? '✍️ ผู้อนุมัติ' :
-                           officer.role === 'supervisor' ? '👮 หัวหน้างาน' :
-                           officer.role === 'checker' ? '📋 ผู้ตรวจสอบ' :
-                           '👮 บุคลากร'}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <select
+                            value={officer.role}
+                            onChange={(e) => handleQuickRoleChange(officer, e.target.value as UserRole)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition cursor-pointer shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-rose-800 ${
+                              ROLE_INFO[officer.role]?.selectClass || 'bg-stone-50 text-stone-800 border-stone-300'
+                            }`}
+                            title="คลิกเพื่อเปลี่ยนบทบาท/สิทธิ์ได้ทันที"
+                          >
+                            <option value="personnel">👮 บุคลากร</option>
+                            <option value="supervisor">👮 หัวหน้างาน</option>
+                            <option value="checker">📋 ผู้ตรวจสอบ</option>
+                            <option value="approver">✍️ ผู้อนุมัติ</option>
+                            <option value="admin">⚙️ Admin</option>
+                            <option value="superintendent">⭐ ผู้กำกับ</option>
+                          </select>
+
+                          <button
+                            onClick={() => handleOpenEditModal(officer)}
+                            className="p-1 rounded-md text-stone-400 hover:text-rose-900 hover:bg-rose-100 transition"
+                            title="คลิกเพื่อแก้ไขบทบาทและข้อมูลอย่างละเอียด"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
 
                       {/* Requirement 7: แอดมินดูชื่อผู้ใช้และรหัสผ่านได้ */}
@@ -340,6 +501,15 @@ export const PersonnelManagement: React.FC = () => {
 
                       <td className="py-3 px-3 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {/* Edit officer and permissions button */}
+                          <button
+                            onClick={() => handleOpenEditModal(officer)}
+                            className="p-1.5 rounded-lg bg-stone-100 hover:bg-rose-100 text-stone-700 hover:text-rose-900 transition"
+                            title="แก้ไขบทบาท/สิทธิ์ และข้อมูลบุคลากร"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-rose-800" />
+                          </button>
+
                           {/* Reset password button (Requirement 31) */}
                           <button
                             onClick={() => {
@@ -371,16 +541,352 @@ export const PersonnelManagement: React.FC = () => {
         </div>
       </div>
 
+      {/* Modal: Edit Officer & Roles / Permissions */}
+      {editOfficer && editFormData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-stone-200 p-5 bg-linear-to-r from-rose-950 to-rose-900 text-white rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <UserCheck className="w-6 h-6 text-amber-400" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold">
+                    แก้ไขบทบาท/สิทธิ์ และข้อมูลบุคลากร
+                  </h2>
+                  <p className="text-xs text-rose-200">
+                    {editOfficer.rank} {editOfficer.firstName} {editOfficer.lastName} ({editOfficer.callSign})
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => { setEditOfficer(null); setEditFormData(null); }} 
+                className="text-rose-200 hover:text-white p-1 rounded-lg hover:bg-white/10 text-xl font-bold leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditOfficer} className="p-6 space-y-6 text-xs sm:text-sm">
+              {/* Section 1: Role & Permissions Selection */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <label className="text-sm font-bold text-rose-950 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-rose-800" />
+                    กำหนดบทบาทและสิทธิ์การเข้าใช้งานระบบ (User Role & Permissions)
+                  </label>
+                  <span className="text-xs font-semibold text-stone-500">
+                    เลือก 1 บทบาท
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {(Object.keys(ROLE_INFO) as UserRole[]).map((rKey) => {
+                    const info = ROLE_INFO[rKey];
+                    const isSelected = editFormData.role === rKey;
+                    return (
+                      <div
+                        key={rKey}
+                        onClick={() => setEditFormData({ ...editFormData, role: rKey })}
+                        className={`p-3.5 rounded-xl border-2 cursor-pointer transition relative flex flex-col justify-between ${
+                          isSelected
+                            ? 'border-rose-900 bg-rose-50/50 shadow-sm ring-1 ring-rose-900'
+                            : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1 mb-1.5">
+                            <span className="font-bold text-stone-900 text-xs sm:text-sm">
+                              {info.shortLabel}
+                            </span>
+                            {isSelected && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-rose-900 text-white text-[10px] font-bold flex items-center gap-0.5">
+                                <Check className="w-3 h-3" /> สิทธิ์ปัจจุบัน
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-stone-600 leading-relaxed mb-2">
+                            {info.description}
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-stone-200/70">
+                          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">
+                            ขอบเขตสิทธิ์:
+                          </span>
+                          <ul className="space-y-0.5 text-[10px] text-stone-700">
+                            {info.permissions.slice(0, 2).map((perm, pIdx) => (
+                              <li key={pIdx} className="flex items-center gap-1">
+                                <span className="w-1 h-1 rounded-full bg-rose-800 shrink-0"></span>
+                                <span className="truncate">{perm}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Section 2: Officer Identity Info */}
+              <div className="space-y-3 pt-2">
+                <div className="border-b pb-2">
+                  <label className="text-sm font-bold text-rose-950 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-rose-800" />
+                    ข้อมูลข้าราชการตำรวจและนามเรียกขาน
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">
+                      นามเรียกขาน <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.callSign}
+                      onChange={e => setEditFormData({ ...editFormData, callSign: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rose-800 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">
+                      ชื่อผู้ใช้ (Username)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.username}
+                      onChange={e => setEditFormData({ ...editFormData, username: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rose-800 font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">ยศ</label>
+                    <select
+                      value={editFormData.rank}
+                      onChange={e => setEditFormData({ ...editFormData, rank: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rose-800 font-bold bg-white"
+                    >
+                      <option value="พ.ต.อ.">พ.ต.อ.</option>
+                      <option value="พ.ต.ท.">พ.ต.ท.</option>
+                      <option value="พ.ต.ต.">พ.ต.ต.</option>
+                      <option value="ร.ต.อ.">ร.ต.อ.</option>
+                      <option value="ร.ต.ท.">ร.ต.ท.</option>
+                      <option value="ร.ต.ต.">ร.ต.ต.</option>
+                      <option value="ด.ต.">ด.ต.</option>
+                      <option value="จ.ส.ต.">จ.ส.ต.</option>
+                      <option value="ส.ต.อ.">ส.ต.อ.</option>
+                      <option value="ส.ต.ท.">ส.ต.ท.</option>
+                      <option value="ส.ต.ต.">ส.ต.ต.</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">
+                      ชื่อ <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.firstName}
+                      onChange={e => setEditFormData({ ...editFormData, firstName: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rose-800 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">
+                      นามสกุล <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.lastName}
+                      onChange={e => setEditFormData({ ...editFormData, lastName: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rose-800 font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Division & Position */}
+              <div className="space-y-3 pt-2">
+                <div className="border-b pb-2">
+                  <label className="text-sm font-bold text-rose-950 flex items-center gap-2">
+                    <Building2Icon />
+                    สายงานและตำแหน่งราชการ
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">สายงานหลัก</label>
+                    <select
+                      value={editFormData.division}
+                      onChange={e => {
+                        const div = e.target.value as DivisionType;
+                        setEditFormData({
+                          ...editFormData,
+                          division: div,
+                          subDivision: SUB_DIVISIONS[div]?.[0] || ''
+                        });
+                      }}
+                      className="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rose-800 bg-white font-bold"
+                    >
+                      {Object.entries(DIVISION_NAMES).map(([key, name]) => (
+                        <option key={key} value={key}>{name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">สายงานย่อย</label>
+                    <select
+                      value={editFormData.subDivision}
+                      onChange={e => setEditFormData({ ...editFormData, subDivision: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rose-800 bg-white"
+                    >
+                      {SUB_DIVISIONS[editFormData.division]?.map(sub => (
+                        <option key={sub} value={sub}>{sub}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">ตำแหน่งตามระบบราชการ</label>
+                    <input
+                      type="text"
+                      value={editFormData.positionTitle}
+                      onChange={e => setEditFormData({ ...editFormData, positionTitle: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rose-800"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: Leave Balances & Contact */}
+              <div className="space-y-3 pt-2">
+                <div className="border-b pb-2">
+                  <label className="text-sm font-bold text-rose-950 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-rose-800" />
+                    โควตาวันลาสะสม และข้อมูลการติดต่อ
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">วันลาพักผ่อนสะสม (วัน)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={60}
+                      value={editFormData.accumulatedLeaveDays}
+                      onChange={e => setEditFormData({ ...editFormData, accumulatedLeaveDays: Number(e.target.value) })}
+                      className="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rose-800 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">สิทธิลาพักผ่อนประจำปีนี้ (วัน)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={30}
+                      value={editFormData.currentYearLeaveQuota}
+                      onChange={e => setEditFormData({ ...editFormData, currentYearLeaveQuota: Number(e.target.value) })}
+                      className="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rose-800 font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">เบอร์โทรศัพท์ติดต่อ</label>
+                    <input
+                      type="text"
+                      value={editFormData.phone || ''}
+                      placeholder="เช่น 081-2345678"
+                      onChange={e => setEditFormData({ ...editFormData, phone: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rose-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">สถานะบัญชีผู้ใช้งาน</label>
+                    <div className="flex items-center gap-3 mt-2">
+                      <label className="flex items-center gap-2 cursor-pointer font-medium">
+                        <input
+                          type="radio"
+                          name="isLockedStatus"
+                          checked={!editFormData.isLocked}
+                          onChange={() => setEditFormData({ ...editFormData, isLocked: false, failedLoginAttempts: 0 })}
+                          className="text-rose-900 focus:ring-rose-800"
+                        />
+                        <span className="text-emerald-700 font-bold">ปกติ (เปิดใช้งาน)</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer font-medium">
+                        <input
+                          type="radio"
+                          name="isLockedStatus"
+                          checked={!!editFormData.isLocked}
+                          onChange={() => setEditFormData({ ...editFormData, isLocked: true })}
+                          className="text-rose-900 focus:ring-rose-800"
+                        />
+                        <span className="text-red-700 font-bold">ระงับการใช้งานชั่วคราว</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">ที่อยู่ติดต่อ</label>
+                  <input
+                    type="text"
+                    value={editFormData.address || ''}
+                    onChange={e => setEditFormData({ ...editFormData, address: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rose-800"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-200">
+                <button
+                  type="button"
+                  onClick={() => { setEditOfficer(null); setEditFormData(null); }}
+                  className="px-4 py-2.5 rounded-xl text-stone-600 hover:bg-stone-100 font-semibold"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-rose-900 hover:bg-rose-950 text-white font-bold shadow-md transition transform active:scale-95 flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  บันทึกการแก้ไขบทบาทและข้อมูล
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Modal: Add New Officer (Requirement 2 & 21) */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-stone-200">
+          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-stone-200 p-5 bg-linear-to-r from-rose-950 to-rose-900 text-white rounded-t-2xl">
               <h2 className="text-base font-bold flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-amber-400" />
                 เพิ่มข้อมูลข้าราชการตำรวจใหม่
               </h2>
-              <button onClick={() => setShowAddModal(false)} className="text-rose-200 hover:text-white">
+              <button onClick={() => setShowAddModal(false)} className="text-rose-200 hover:text-white text-xl font-bold leading-none">
                 ×
               </button>
             </div>
@@ -599,7 +1105,7 @@ export const PersonnelManagement: React.FC = () => {
       {/* Modal: Admin Reset Password (Requirement 31) */}
       {resetPassOfficer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-stone-200 p-6 space-y-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-stone-200 p-6 space-y-4 animate-in fade-in zoom-in-95">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-amber-100 text-amber-800 rounded-xl">
                 <Key className="w-6 h-6" />
@@ -651,3 +1157,11 @@ export const PersonnelManagement: React.FC = () => {
     </div>
   );
 };
+
+function Building2Icon() {
+  return (
+    <svg className="w-4 h-4 text-rose-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  );
+}
