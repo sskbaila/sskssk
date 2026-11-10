@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --police-maroon-deep: #590d1c;
+    --police-maroon: #731224;
+    --police-maroon-mid: #88162b;
+    --police-maroon-light: #9e2038;
+    --police-maroon-subtle: #fdf2f4;
+    --police-gold: #c99e32;
+    --police-gold-light: #ecc567;
+  }
+
+  body {
+    font-family: 'TH Sarabun New', 'TH Sarabun PSK', 'THSarabunNew', 'Sarabun', sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    background-color: #f7f5f5;
+    color: #1f2937;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Make headings and main labels bold and easy on the eyes as requested */
+  h1, h2, h3, h4, h5, h6, th {
+    font-weight: 700;
+  }
+}
+
+/* Custom styling for print: strict A4 sheet */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm 20mm 15mm 20mm;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 15pt !important;
+    line-height: 1.35 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .print-page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .print-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
+/* Custom smooth scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #c27885;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #88162b;
+}
