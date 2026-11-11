@@ -20,7 +20,7 @@ import { LeaveRequest } from './types/leave';
 import { 
   Home, FileEdit, Inbox, Calendar, Users, History, 
   BarChart3, Settings, LogOut, Bell, Search, Shield, 
-  Menu, X, Database, Clock, ChevronRight, UserCircle 
+  Menu, X, Database, Clock, ChevronRight, UserCircle, Printer 
 } from 'lucide-react';
 
 function MainApp() {
@@ -77,15 +77,21 @@ function MainApp() {
     setCurrentView('print_a4');
   };
 
-  // Printable Document View
-  if (currentView === 'print_a4' && printLeaveTarget) {
-    return (
-      <OfficialLeaveDocument
-        leave={printLeaveTarget}
-        config={stationConfig}
-        onBack={() => setCurrentView('dashboard')}
-      />
-    );
+  // Printable Document View (ศูนย์พิมพ์เอกสารและใบลา A4)
+  if (currentView === 'print_a4') {
+    const targetLeave = printLeaveTarget || leaves[0];
+    if (targetLeave) {
+      return (
+        <OfficialLeaveDocument
+          leave={targetLeave}
+          config={stationConfig}
+          allLeaves={leaves}
+          onSelectLeave={(l) => setPrintLeaveTarget(l)}
+          onNavigateToReports={() => setCurrentView('reports')}
+          onBack={() => setCurrentView('dashboard')}
+        />
+      );
+    }
   }
 
   return (
@@ -278,25 +284,67 @@ function MainApp() {
                 <BarChart3 className="w-4 h-4" />
                 <span>สถิติและรายงาน</span>
               </button>
+
+              {/* 8. ศูนย์พิมพ์เอกสารและใบลา A4 */}
+              <button
+                onClick={() => {
+                  if (!printLeaveTarget && leaves.length > 0) {
+                    setPrintLeaveTarget(leaves[0]);
+                  }
+                  setCurrentView('print_a4');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
+                  currentView === 'print_a4'
+                    ? 'bg-amber-500 text-stone-950 shadow-md font-bold'
+                    : 'text-stone-200 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Printer className="w-4 h-4" />
+                <span>พิมพ์แบบใบลา A4</span>
+              </button>
             </>
           )}
 
-          {/* Regular user can view own leave history */}
+          {/* Regular user can view own leave history & print own leaves */}
           {isRegularUser && (
-            <button
-              onClick={() => {
-                setCurrentView('history');
-                setMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
-                currentView === 'history'
-                  ? 'bg-amber-500 text-stone-950 shadow-md font-bold'
-                  : 'text-stone-200 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              <History className="w-4 h-4" />
-              <span>ประวัติการลาของฉัน</span>
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  setCurrentView('history');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
+                  currentView === 'history'
+                    ? 'bg-amber-500 text-stone-950 shadow-md font-bold'
+                    : 'text-stone-200 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <History className="w-4 h-4" />
+                <span>ประวัติการลาของฉัน</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const myLeaves = leaves.filter(l => l.userId === currentUser?.id);
+                  if (myLeaves.length > 0) {
+                    setPrintLeaveTarget(myLeaves[0]);
+                  } else if (leaves.length > 0) {
+                    setPrintLeaveTarget(leaves[0]);
+                  }
+                  setCurrentView('print_a4');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
+                  currentView === 'print_a4'
+                    ? 'bg-amber-500 text-stone-950 shadow-md font-bold'
+                    : 'text-stone-200 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Printer className="w-4 h-4" />
+                <span>พิมพ์แบบใบลา A4</span>
+              </button>
+            </>
           )}
 
           <div className="pt-3 border-t border-rose-800/40 space-y-1">

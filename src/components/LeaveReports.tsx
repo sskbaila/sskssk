@@ -15,7 +15,7 @@ export const LeaveReports: React.FC = () => {
   >('monthly_register');
 
   const [selectedMonth, setSelectedMonth] = useState<number>(9); // 9 = ตุลาคม
-  const [selectedYear, setSelectedYear] = useState<number>(2026);
+  const [selectedYear, setSelectedYear] = useState<number>(stationConfig.currentFiscalYear ? stationConfig.currentFiscalYear - 543 : 2025);
   const [filterDivision, setFilterDivision] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 

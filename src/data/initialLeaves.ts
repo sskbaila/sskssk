@@ -16,15 +16,15 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     dutyName: 'งานอำนวยการ', // ผู้ลาปฏิบัติหน้าที่
     leaveType: 'vacation',
     reason: 'พักผ่อนประจำปีและเยี่ยมครอบครัวภูมิลำเนา',
-    startDate: '2026-10-12',
-    endDate: '2026-10-16',
+    startDate: '2025-10-12',
+    endDate: '2025-10-16',
     durationDays: 5,
     periodType: 'full',
     contactAddress: '88 หมู่ที่ 10 ตำบลศรีสงคราม อำเภอศรีสงคราม จังหวัดนครพนม',
     contactPhone: '061-3137089',
     lastLeaveType: 'vacation',
-    lastLeaveStartDate: '2026-06-10',
-    lastLeaveEndDate: '2026-06-12',
+    lastLeaveStartDate: '2025-06-10',
+    lastLeaveEndDate: '2025-06-12',
     lastLeaveDays: 3,
     accumulatedDays: 14,
     currentQuotaDays: 10,
@@ -38,8 +38,8 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     recipientTitle: 'ผกก.สภ.ศรีสงคราม',
     attachments: [],
     status: 'pending_supervisor',
-    createdAt: '2026-10-01 09:30',
-    updatedAt: '2026-10-01 09:30',
+    createdAt: '2025-10-01 09:30',
+    updatedAt: '2025-10-01 09:30',
     timeline: [
       {
         step: 'submitted',
@@ -47,7 +47,7 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
         actor: 'ส.ต.ท. นัฐพงษ์ คุ้มเกรง',
         actorRankName: 'ส.ต.ท. นัฐพงษ์ คุ้มเกรง (ศรีสงคราม 503)',
         action: 'ส่งคำขอลาเพื่อรอการตรวจสอบ',
-        timestamp: '2026-10-01 09:30',
+        timestamp: '2025-10-01 09:30',
         status: 'completed',
         note: 'ขอลาพักผ่อนประจำปี 5 วันทำการ'
       },
@@ -57,7 +57,7 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
         actor: 'พ.ต.ต. เลิศพิสิฐธร สมบัติภูธร',
         actorRankName: 'พ.ต.ต. เลิศพิสิฐธร สมบัติภูธร (สว.อก.)',
         action: 'กำลังรอการตรวจสอบความเห็นผู้บังคับบัญชา',
-        timestamp: '2026-10-01 09:30',
+        timestamp: '2025-10-01 09:30',
         status: 'current'
       },
       {
@@ -95,8 +95,8 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     dutyName: 'งานป้องกันปราบปราม',
     leaveType: 'vacation',
     reason: 'กิจธุระส่วนตัวและดูแลครอบครัว',
-    startDate: '2026-10-20',
-    endDate: '2026-10-25',
+    startDate: '2025-10-20',
+    endDate: '2025-10-25',
     durationDays: 6,
     periodType: 'full',
     contactAddress: 'อ.ศรีสงคราม จ.นครพนม',
@@ -115,15 +115,15 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     status: 'approved',
     supervisorComment: 'เห็นควรอนุญาตให้ลาได้ กำลังพลเพียงพอ',
     supervisorSignedBy: 'พ.ต.ท. สมนึก จิตรโท',
-    supervisorDate: '2026-10-15',
+    supervisorDate: '2025-10-15',
     checkerComment: 'ตรวจสอบวันลาถูกต้อง มีสิทธิคงเหลือ 16 วัน',
     checkerSignedBy: 'ร.ต.ท. จีรภัทร ผงพิลา',
-    checkerDate: '2026-10-15',
+    checkerDate: '2025-10-15',
     approverComment: 'อนุญาต',
     approverSignedBy: 'พ.ต.อ. ถวิล คำเกษ',
-    approverDate: '2026-10-16',
-    createdAt: '2026-10-15 08:20',
-    updatedAt: '2026-10-16 11:00',
+    approverDate: '2025-10-16',
+    createdAt: '2025-10-15 08:20',
+    updatedAt: '2025-10-16 11:00',
     timeline: [
       {
         step: 'submitted',
@@ -131,7 +131,7 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
         actor: 'พ.ต.ท. สมนึก จิตรโท',
         actorRankName: 'พ.ต.ท. สมนึก จิตรโท (ศรีสงคราม 2)',
         action: 'ส่งคำขอลาพักผ่อน',
-        timestamp: '2026-10-15 08:20',
+        timestamp: '2025-10-15 08:20',
         status: 'completed'
       },
       {
@@ -140,7 +140,7 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
         actor: 'พ.ต.อ. ถวิล คำเกษ',
         actorRankName: 'พ.ต.อ. ถวิล คำเกษ (ผกก.สภ.ศรีสงคราม)',
         action: 'อนุมัติคำขอลาเรียบร้อยแล้ว',
-        timestamp: '2026-10-16 11:00',
+        timestamp: '2025-10-16 11:00',
         status: 'completed'
       }
     ]
@@ -160,8 +160,8 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     dutyName: 'งานอำนวยการ',
     leaveType: 'vacation',
     reason: 'พักผ่อนประจำปี',
-    startDate: '2026-10-20',
-    endDate: '2026-10-26',
+    startDate: '2025-10-20',
+    endDate: '2025-10-26',
     durationDays: 7,
     periodType: 'full',
     contactAddress: 'อ.ศรีสงคราม จ.นครพนม',
@@ -180,15 +180,15 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     status: 'approved',
     supervisorComment: 'เห็นควรอนุญาต',
     supervisorSignedBy: 'พ.ต.ต. เลิศพิสิฐธร สมบัติภูธร',
-    supervisorDate: '2026-10-14',
+    supervisorDate: '2025-10-14',
     checkerComment: 'ตรวจสอบถูกต้อง',
     checkerSignedBy: 'ร.ต.ท. จีรภัทร ผงพิลา',
-    checkerDate: '2026-10-14',
+    checkerDate: '2025-10-14',
     approverComment: 'อนุญาต',
     approverSignedBy: 'พ.ต.อ. ถวิล คำเกษ',
-    approverDate: '2026-10-15',
-    createdAt: '2026-10-14 10:15',
-    updatedAt: '2026-10-15 09:30',
+    approverDate: '2025-10-15',
+    createdAt: '2025-10-14 10:15',
+    updatedAt: '2025-10-15 09:30',
     timeline: [
       {
         step: 'submitted',
@@ -196,7 +196,7 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
         actor: 'พ.ต.ต. เลิศพิสิฐธร สมบัติภูธร',
         actorRankName: 'พ.ต.ต. เลิศพิสิฐธร สมบัติภูธร (ศรีสงคราม 05)',
         action: 'ส่งคำขอลาพักผ่อน',
-        timestamp: '2026-10-14 10:15',
+        timestamp: '2025-10-14 10:15',
         status: 'completed'
       },
       {
@@ -205,7 +205,7 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
         actor: 'พ.ต.อ. ถวิล คำเกษ',
         actorRankName: 'พ.ต.อ. ถวิล คำเกษ',
         action: 'ลงนามอนุมัติคำขอลา',
-        timestamp: '2026-10-15 09:30',
+        timestamp: '2025-10-15 09:30',
         status: 'completed'
       }
     ]
@@ -225,8 +225,8 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     dutyName: 'งานป้องกันปราบปราม',
     leaveType: 'personal',
     reason: 'ติดต่อธุระสำคัญทางราชการส่วนตัวที่อำเภอ',
-    startDate: '2026-10-03',
-    endDate: '2026-10-03',
+    startDate: '2025-10-03',
+    endDate: '2025-10-03',
     durationDays: 1,
     periodType: 'full',
     contactAddress: 'ต.ศรีสงคราม อ.ศรีสงคราม จ.นครพนม',
@@ -245,12 +245,12 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     status: 'approved',
     supervisorComment: 'เห็นควรอนุญาต',
     supervisorSignedBy: 'พ.ต.ท. สมนึก จิตรโท',
-    supervisorDate: '2026-10-02',
+    supervisorDate: '2025-10-02',
     approverComment: 'อนุญาต',
     approverSignedBy: 'พ.ต.อ. ถวิล คำเกษ',
-    approverDate: '2026-10-02',
-    createdAt: '2026-10-02 08:00',
-    updatedAt: '2026-10-02 16:30',
+    approverDate: '2025-10-02',
+    createdAt: '2025-10-02 08:00',
+    updatedAt: '2025-10-02 16:30',
     timeline: [
       {
         step: 'approved',
@@ -258,7 +258,7 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
         actor: 'พ.ต.อ. ถวิล คำเกษ',
         actorRankName: 'พ.ต.อ. ถวิล คำเกษ',
         action: 'อนุมัติ',
-        timestamp: '2026-10-02 16:30',
+        timestamp: '2025-10-02 16:30',
         status: 'completed'
       }
     ]
@@ -278,8 +278,8 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     dutyName: 'งานสอบสวน',
     leaveType: 'personal',
     reason: 'ติดภารกิจครอบครัวด่วน',
-    startDate: '2026-10-16',
-    endDate: '2026-10-16',
+    startDate: '2025-10-16',
+    endDate: '2025-10-16',
     durationDays: 1,
     periodType: 'full',
     contactAddress: 'อ.ศรีสงคราม จ.นครพนม',
@@ -296,8 +296,8 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     recipientTitle: 'ผกก.สภ.ศรีสงคราม',
     attachments: [],
     status: 'cancelled',
-    createdAt: '2026-10-10 14:00',
-    updatedAt: '2026-10-11 09:00',
+    createdAt: '2025-10-10 14:00',
+    updatedAt: '2025-10-11 09:00',
     timeline: [
       {
         step: 'cancelled',
@@ -305,7 +305,7 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
         actor: 'ร.ต.อ. จรินทร์ พิมพ์จันทร์',
         actorRankName: 'ร.ต.อ. จรินทร์ พิมพ์จันทร์ (ศรีสงคราม 32)',
         action: 'ผู้ขอยกเลิกคำขอเนื่องจากสับเปลี่ยนเวรปฏิบัติหน้าที่ได้',
-        timestamp: '2026-10-11 09:00',
+        timestamp: '2025-10-11 09:00',
         status: 'cancelled'
       }
     ]
@@ -325,8 +325,8 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     dutyName: 'ผู้กำกับการ สภ.ศรีสงคราม',
     leaveType: 'vacation',
     reason: 'พักผ่อนประจำปี',
-    startDate: '2026-11-16',
-    endDate: '2026-11-20',
+    startDate: '2025-11-16',
+    endDate: '2025-11-20',
     durationDays: 5,
     periodType: 'full',
     contactAddress: 'สภ.ศรีสงคราม จ.นครพนม',
@@ -344,8 +344,8 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
     commanderCustomName: 'พล.ต.ต. อารักษ์ มะสาธานัง',
     attachments: [],
     status: 'pending_approver',
-    createdAt: '2026-11-05 10:00',
-    updatedAt: '2026-11-05 10:00',
+    createdAt: '2025-11-05 10:00',
+    updatedAt: '2025-11-05 10:00',
     timeline: [
       {
         step: 'submitted',
@@ -353,7 +353,7 @@ export const INITIAL_LEAVES: LeaveRequest[] = [
         actor: 'พ.ต.อ. ถวิล คำเกษ',
         actorRankName: 'พ.ต.อ. ถวิล คำเกษ (ผกก.สภ.ศรีสงคราม)',
         action: 'เสนอผู้บังคับการตำรวจภูธรจังหวัดนครพนม พิจารณาอนุญาต',
-        timestamp: '2026-11-05 10:00',
+        timestamp: '2025-11-05 10:00',
         status: 'completed'
       }
     ]
