@@ -30,8 +30,8 @@
 /* Custom styling for print: strict A4 sheet with TH Sarabun */
 @media print {
   @page {
-    size: A4 portrait;
-    margin: 10mm 14mm 10mm 14mm;
+    size: auto;
+    margin: 8mm 12mm;
   }
 
   html, body {

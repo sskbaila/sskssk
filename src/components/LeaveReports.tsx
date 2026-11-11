@@ -5,6 +5,7 @@ import {
   BarChart3, Printer, Download, FileSpreadsheet, FileText, 
   Search, Filter, Calendar, Users, Shield, ArrowUpDown 
 } from 'lucide-react';
+import { stripPoliceRank } from './OfficialLeaveDocument';
 
 export const LeaveReports: React.FC = () => {
   const { officers, leaves, stationConfig } = useLeave();
@@ -235,17 +236,15 @@ export const LeaveReports: React.FC = () => {
           <div className="grid grid-cols-2 gap-8 pt-8 mt-8 border-t border-stone-300 text-xs sm:text-sm">
             <div className="text-center space-y-1">
               <div className="font-bold">ตรวจสอบถูกต้อง เสนอผู้กำกับการพิจารณา</div>
-              <div className="pt-2 text-center text-xs">(ลงชื่อ)</div>
-              <div className="font-mono text-center">พ.ต.ต....................................................</div>
-              <div className="font-bold text-center">( พ.ต.ต. เลิศพิสิฐธร  สมบัติภูธร )</div>
+              <div className="pt-2 font-mono text-center">(ลงชื่อ)พ.ต.ต....................................................</div>
+              <div className="font-bold text-center">( เลิศพิสิฐธร  สมบัติภูธร )</div>
               <div className="text-stone-700 text-center">ตำแหน่ง สว.อก.สภ.ศรีสงคราม</div>
             </div>
 
             <div className="text-center space-y-1">
               <div className="font-bold">ทราบ / อนุมัติ</div>
-              <div className="pt-2 text-center text-xs">(ลงชื่อ)</div>
-              <div className="font-mono text-center">พ.ต.อ....................................................</div>
-              <div className="font-bold text-center">( {stationConfig.superintendentRankName || 'พ.ต.อ. ถวิล คำเกษ'} )</div>
+              <div className="pt-2 font-mono text-center">(ลงชื่อ)พ.ต.อ....................................................</div>
+              <div className="font-bold text-center">( {stripPoliceRank(stationConfig.superintendentRankName) || 'ถวิล  คำเกษ'} )</div>
               <div className="text-stone-700 text-center">ตำแหน่ง {stationConfig.superintendentPosition || 'ผกก.สภ.ศรีสงคราม'}</div>
             </div>
           </div>
@@ -313,8 +312,8 @@ export const LeaveReports: React.FC = () => {
           {/* Presentation Block to Superintendent */}
           <div className="pt-6 border-t border-stone-300 text-xs sm:text-sm text-center">
             <div>เพื่อโปรดทราบและพิจารณา</div>
-            <div className="pt-4 font-mono">(ลงชื่อ) พ.ต.อ....................................................</div>
-            <div className="font-bold">( {stationConfig.superintendentRankName} )</div>
+            <div className="pt-4 font-mono">(ลงชื่อ)พ.ต.อ....................................................</div>
+            <div className="font-bold">( {stripPoliceRank(stationConfig.superintendentRankName) || 'ถวิล  คำเกษ'} )</div>
             <div className="text-stone-600">ตำแหน่ง {stationConfig.superintendentPosition}</div>
           </div>
         </div>
